@@ -1,0 +1,55 @@
+#!/bin/bash
+
+. ${BASH_SOURCE%/*}/../usr/share/installer/ask.sh
+
+echo
+echo "Welcome to Pinebook Pro bootstrap and rescue!"
+echo
+
+while [ "0" ]; do
+    cmd=''
+    ask "(I)nstall, (R)escue or (S)hell?" cmd 
+    [ "${cmd,,}" == "i" ] && break
+
+    echo
+    echo "If you need network access, type 'networking'."
+    echo
+
+    if [ "${cmd,,}" == "r" ]; then
+        echo
+        echo "Mounting eMMC to /mnt, type 'chroot /mnt' to get in. Exit the outer shell when finished."
+        echo
+
+        mount /dev/mmcblk1p1 /mnt
+        /bin/mount -t devtmpfs devtmpfs /mnt/dev
+        /bin/mount -t proc none /mnt/proc
+        /bin/mount -t sysfs none /mnt/sys
+        /bin/mount -t tmpfs none /mnt/tmp
+
+        bash -i
+
+        umount /mnt/tmp
+        umount /mnt/sys
+        umount /mnt/proc
+        umount /mnt/dev
+        umount /mnt
+
+        echo "Bye."
+    fi
+    if [ "${cmd,,}" == "s" ]; then
+        bash -i
+    fi
+done
+
+echo
+echo "At any point you can temporarily escape to shell by answering '!' into any question except a password prompt. To continue installation, exit the shell."
+echo "If you completely exit the installer, you can restart it by running 'installer'."
+echo
+echo "Note that this installer requires a wireless network with internet access."
+echo
+
+. ${BASH_SOURCE%/*}/networking
+
+echo
+echo "You can now partition and debootstrap the eMMC or SD card manually, guided tour TODO."
+echo

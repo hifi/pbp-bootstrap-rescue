@@ -1,0 +1,31 @@
+#!/bin/bash
+export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
+/bin/mount -t devtmpfs devtmpfs /dev
+/bin/mount -t proc none /proc
+/bin/mount -t sysfs none /sys
+/bin/mount -t tmpfs none /tmp
+
+echo "127.0.0.1 bootstrap" > /etc/hosts
+hostname bootstrap
+
+# modules required only for x86_64 testing builds
+if [ "$(uname -m)" == "x86_64" ]; then
+    echo "Loading virtio modules..."
+    for mod in libata virtio virtio-pci virtio-blk virtio-net; do
+        modprobe $mod
+    done
+fi
+
+# fair debian dice roll
+echo 4 > /dev/urandom
+
+clear
+
+# start installer by default
+setsid sh -c 'exec /bin/bash /sbin/installer </dev/tty1 >/dev/tty1 2>&1'
+
+# provide a shell until system halt
+while [ "0" ]; do
+    setsid sh -c 'exec /bin/bash </dev/tty1 >/dev/tty1 2>&1'
+done

@@ -1,0 +1,6 @@
+rootfs.cpio
+rootfs/
+bootfs/bootstrap.gz
+bootfs/Image
+bootfs/*.dtb
+pbp-bar.img.xz

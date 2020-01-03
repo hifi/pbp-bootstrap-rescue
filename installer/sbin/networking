@@ -1,0 +1,35 @@
+#!/bin/bash
+
+. ${BASH_SOURCE%/*}/../usr/share/installer/ask.sh
+
+Q_WIFI_SSID=${Q_WIFI_SSID-}
+Q_WIFI_ENC=${Q_WIFI_ENC-wpa2-psk}
+Q_WIFI_PSK=${Q_WIFI_PSK-}
+Q_WIFI_IP=${Q_WIFI_IP-dhcp}
+Q_WIFI_DNS=${Q_WIFI_DNS-}
+
+ask_q "Wireless network name" Q_WIFI_SSID
+ask_q "Wireless network encryption" Q_WIFI_ENC "wpa2-psk" "none"
+if [ "$Q_WIFI_ENC" == "wpa2-psk" ]; then
+    while [ "0" ]; do
+        ask_q "Wireless network passphrase" Q_WIFI_PSK
+        [ -z "$Q_WIFI_PSK" ] || break
+        echo "Passphrase is required to connect."
+    done
+fi
+
+ask_q "Wireless network IPv4 address (dhcp or ip)" Q_WIFI_IP "dhcp"
+if [ "$Q_WIFI_IP" != "dhcp" ]; then
+    ask_q "Wireless network IPv4 gateway" Q_WIFI_GW
+    ask_q "Wireless network IPv4 dns servers (space separated list)" Q_WIFI_DNS
+fi
+
+killall dhclient &> /dev/null
+killall wpa_supplicant &> /dev/null
+
+ip link set wlan0 up
+wpa_passphrase "$Q_WIFI_SSID" "$Q_WIFI_PSK" > /etc/wpa_supplicant.conf
+wpa_supplicant -B -D wext -i wlan0 -c /etc/wpa_supplicant.conf &>/dev/null
+echo "Waiting 5 seconds for link before dhcp..."
+sleep 5
+dhclient wlan0 &>/dev/null
